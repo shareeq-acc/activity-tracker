@@ -1,0 +1,298 @@
+# ===========================================================================
+#  Activity categorisation rules
+# ===========================================================================
+#  Rules are evaluated TOP TO BOTTOM and the FIRST match wins. That is why the
+#  specific browser rules sit above the generic browser rule: a Chrome window
+#  titled "... - YouTube" must be caught before Chrome falls through to
+#  "browsing".
+#
+#  Match fields (all optional, all case-insensitive; a rule needs at least one):
+#    exe        : process name, supports * globs        e.g. [Code.exe, idea*.exe]
+#    title_any  : match if ANY of these appear in the window title
+#    title_all  : match only if ALL of these appear
+#    title_not  : veto - skip this rule if ANY of these appear
+#
+#  After editing, hit "Reload rules" in Settings (or POST /api/rules/reload).
+#  History is re-categorised in place, so fixing a rule also fixes the past.
+# ===========================================================================
+
+version: 1
+
+# --- Buckets roll categories up into the learning-vs-distraction ratio -----
+#     bucket: growth | neutral | distraction | idle
+categories:
+  building:      { label: "Building",       bucket: growth,      color: "#34d399" }
+  learning:      { label: "Learning",       bucket: growth,      color: "#38bdf8" }
+  communication: { label: "Communication",  bucket: neutral,     color: "#a78bfa" }
+  browsing:      { label: "Browsing",       bucket: neutral,     color: "#94a3b8" }
+  utility:       { label: "Utility",        bucket: neutral,     color: "#64748b" }
+  social:        { label: "Social media",   bucket: distraction, color: "#fb7185" }
+  watching:      { label: "Watching",       bucket: distraction, color: "#f59e0b" }
+  gaming:        { label: "Gaming",         bucket: distraction, color: "#e879f9" }
+  idle:          { label: "Idle / away",    bucket: idle,        color: "#334155" }
+  uncategorized: { label: "Uncategorized",  bucket: neutral,     color: "#475569" }
+
+fallback: uncategorized
+
+rules:
+  # -- idle is emitted by the collector itself ------------------------------
+  - id: idle
+    category: idle
+    exe: ["__idle__", "__locked__"]
+
+  # -- social media (must precede the generic browser rule) -----------------
+  - id: social-web
+    category: social
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
+    title_any:
+      - " / X"
+      - twitter
+      - facebook
+      - instagram
+      - reddit
+      - tiktok
+      - linkedin
+      - threads
+      - snapchat
+      - 9gag
+      - pinterest
+  - id: social-app
+    category: social
+    exe: [Instagram.exe, TikTok.exe]
+
+  # -- watching / entertainment --------------------------------------------
+  # A YouTube tab that is clearly educational is caught by the NEXT rule, so
+  # this one vetoes those keywords via title_not.
+  - id: watching-web
+    category: watching
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
+    title_any:
+      - youtube
+      - netflix
+      - twitch
+      - primevideo
+      - "prime video"
+      - "disney+"
+      - hulu
+      - crunchyroll
+      - hotstar
+      - cricbuzz
+      - espn
+      - "- IMDb"
+    title_not:
+      - tutorial
+      - "full course"
+      - lecture
+      - "crash course"
+      - "conference talk"
+  - id: watching-as-learning
+    category: learning
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
+    title_all: [youtube]
+    title_any:
+      - tutorial
+      - "full course"
+      - lecture
+      - "crash course"
+      - "conference talk"
+  - id: watching-app
+    category: watching
+    exe: [vlc.exe, mpc-hc64.exe, mpv.exe, PotPlayerMini64.exe, Netflix.exe, Video.UI.exe]
+
+  # -- gaming ---------------------------------------------------------------
+  - id: gaming-launchers
+    category: gaming
+    exe:
+      - steam.exe
+      - steamwebhelper.exe
+      - EpicGamesLauncher.exe
+      - Battle.net.exe
+      - RiotClientUX.exe
+      - GalaxyClient.exe
+      - Origin.exe
+      - EADesktop.exe
+      - UbisoftConnect.exe
+      - upc.exe
+  - id: gaming-titles
+    category: gaming
+    exe:
+      - VALORANT-Win64-Shipping.exe
+      - "League of Legends.exe"
+      - csgo.exe
+      - cs2.exe
+      - Dota2.exe
+      - FortniteClient-Win64-Shipping.exe
+      - GTA5.exe
+      - RocketLeague.exe
+      - Minecraft.Windows.exe
+  - id: gaming-web
+    category: gaming
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe]
+    title_any: [chess.com, lichess, "- Steam", itch.io, poki, geoguessr]
+
+  # -- building -------------------------------------------------------------
+  - id: editors
+    category: building
+    exe:
+      - Code.exe
+      - "Code - Insiders.exe"
+      - Cursor.exe
+      - windsurf.exe
+      - devenv.exe
+      - idea64.exe
+      - pycharm64.exe
+      - webstorm64.exe
+      - goland64.exe
+      - clion64.exe
+      - rider64.exe
+      - studio64.exe
+      - sublime_text.exe
+      - "notepad++.exe"
+      - neovide.exe
+      - nvim.exe
+      - vim.exe
+      - Zed.exe
+      - Kiro.exe
+      - trae.exe
+  - id: terminals
+    category: building
+    exe:
+      - WindowsTerminal.exe
+      - powershell.exe
+      - pwsh.exe
+      - cmd.exe
+      - alacritty.exe
+      - wezterm-gui.exe
+      - mintty.exe
+      - ubuntu.exe
+      - wsl.exe
+  - id: dev-tools
+    category: building
+    exe:
+      - "Docker Desktop.exe"
+      - Postman.exe
+      - insomnia.exe
+      - DataGrip64.exe
+      - Ssms.exe
+      - pgAdmin4.exe
+      - TablePlus.exe
+      - GitHubDesktop.exe
+      - sourcetree.exe
+      - Fork.exe
+      - Figma.exe
+      - claude.exe
+      - ChatGPT.exe
+      - Unity.exe
+      - UnrealEditor.exe
+      - blender.exe
+  - id: dev-web
+    category: building
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
+    title_any:
+      - github
+      - gitlab
+      - bitbucket
+      - localhost
+      - "127.0.0.1"
+      - "stack overflow"
+      - stackoverflow
+      - codepen
+      - codesandbox
+      - replit
+      - vercel
+      - netlify
+      - "aws console"
+      - console.aws
+      - "azure portal"
+      - digitalocean
+      - coolify
+      - grafana
+      - jira
+      - linear.app
+      - "- Claude"
+      - chatgpt
+      - claude.ai
+
+  # -- learning / reading ---------------------------------------------------
+  - id: learning-web
+    category: learning
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
+    title_any:
+      - documentation
+      - " docs"
+      - developer.mozilla
+      - "mdn web"
+      - w3schools
+      - freecodecamp
+      - coursera
+      - udemy
+      - "khan academy"
+      - pluralsight
+      - leetcode
+      - hackerrank
+      - codewars
+      - medium.com
+      - dev.to
+      - hashnode
+      - substack
+      - arxiv
+      - wikipedia
+      - "hacker news"
+      - news.ycombinator
+  - id: readers
+    category: learning
+    exe:
+      - SumatraPDF.exe
+      - Acrobat.exe
+      - AcroRd32.exe
+      - FoxitPDFReader.exe
+      - calibre.exe
+      - ebook-viewer.exe
+      - Zotero.exe
+      - obsidian.exe
+      - Notion.exe
+      - anki.exe
+
+  # -- communication --------------------------------------------------------
+  - id: comms
+    category: communication
+    exe:
+      - Discord.exe
+      - slack.exe
+      - Teams.exe
+      - ms-teams.exe
+      - Zoom.exe
+      - WhatsApp.exe
+      - Telegram.exe
+      - Signal.exe
+      - Skype.exe
+      - olk.exe
+      - OUTLOOK.exe
+      - thunderbird.exe
+  - id: comms-web
+    category: communication
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
+    title_any: [gmail, outlook, "google meet", web.whatsapp, teams.microsoft]
+
+  # -- utility --------------------------------------------------------------
+  - id: utility
+    category: utility
+    exe:
+      - explorer.exe
+      - Taskmgr.exe
+      - SystemSettings.exe
+      - ApplicationFrameHost.exe
+      - ShellExperienceHost.exe
+      - LockApp.exe
+      - Spotify.exe
+      - 7zFM.exe
+      - WinRAR.exe
+      - mmc.exe
+      - regedit.exe
+      - Notepad.exe
+      - SnippingTool.exe
+
+  # -- generic browser fallback: keep this LAST ------------------------------
+  - id: browser-generic
+    category: browsing
+    exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]

@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    container_name: activity-tracker
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8765}:8765"
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /data
+      RULES_PATH: /app/rules.yml
+    volumes:
+      # The database lives on the host, so `docker compose down` never costs
+      # you history and backing up is just copying a file.
+      - ./data:/data
+      # Edit rules.yml on the host, hit "Reload rules" in the UI.
+      - ./rules.yml:/app/rules.yml:ro
+    extra_hosts:
+      # Lets the container reach an Ollama installed natively on the host.
+      - "host.docker.internal:host-gateway"
+
+  # Optional CPU-only local model, for running without a host Ollama install:
+  #   docker compose --profile local-llm up -d
+  # Note: Docker Desktop on Windows cannot pass an AMD GPU into a container,
+  # so this path is CPU-bound. A host install of Ollama will be faster.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: activity-tracker-ollama
+    profiles: ["local-llm"]
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+
+volumes:
+  ollama-models:

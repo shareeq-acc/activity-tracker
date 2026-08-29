@@ -1,0 +1,21 @@
+# data
+data/*.db
+data/*.db-wal
+data/*.db-shm
+collector/spool/
+collector/*.log
+
+# env
+.env
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# editors / os
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

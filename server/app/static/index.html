@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Activity Tracker</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⏱️</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <span>Activity Tracker</span>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button data-view="today"    class="tab active">Today</button>
+    <button data-view="timeline" class="tab">Timeline</button>
+    <button data-view="insights" class="tab">Insights</button>
+    <button data-view="focus"    class="tab">Timer</button>
+    <button data-view="chat"     class="tab">Ask</button>
+    <button data-view="settings" class="tab">Settings</button>
+  </nav>
+
+  <div class="status" id="collector-status" title="Collector connection">
+    <span class="dot" id="status-dot"></span>
+    <span id="status-text">checking…</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= TODAY ================= -->
+  <section class="view active" id="view-today">
+    <div class="row">
+      <div class="card live-card">
+        <div class="card-title">Right now</div>
+        <div id="live-now" class="live-now"><div class="muted">No activity recorded yet.</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Growth vs distraction</div>
+        <div class="ring-wrap">
+          <div id="today-ring"></div>
+          <div id="today-ring-legend" class="ring-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="segmented" id="today-period">
+        <button data-period="today" class="active">Today</button>
+        <button data-period="yesterday">Yesterday</button>
+        <button data-period="week">This week</button>
+        <button data-period="7d">7 days</button>
+        <button data-period="30d">30 days</button>
+      </div>
+      <span class="muted" id="today-range"></span>
+    </div>
+
+    <div class="row">
+      <div class="card grow">
+        <div class="card-title">Where the time went</div>
+        <div id="today-categories"></div>
+      </div>
+      <div class="card grow">
+        <div class="card-title">Top applications</div>
+        <div id="today-apps"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Time of day <span class="hint">average per observed day</span></div>
+      <div id="today-hourly"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Most time in these windows</div>
+      <div id="today-titles"></div>
+    </div>
+  </section>
+
+  <!-- ================= TIMELINE ================= -->
+  <section class="view" id="view-timeline">
+    <div class="toolbar">
+      <button class="btn" id="tl-prev">‹ Previous</button>
+      <input type="date" id="tl-date" class="input">
+      <button class="btn" id="tl-next">Next ›</button>
+      <button class="btn btn-ghost" id="tl-today">Today</button>
+    </div>
+    <div class="card">
+      <div class="card-title">24-hour strip</div>
+      <div id="tl-strip"></div>
+      <div id="tl-legend" class="ring-legend" style="margin-top:14px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sessions <span class="hint">longest first</span></div>
+      <div id="tl-list" class="scroll-list"></div>
+    </div>
+  </section>
+
+  <!-- ================= INSIGHTS ================= -->
+  <section class="view" id="view-insights">
+    <div class="toolbar">
+      <div class="segmented" id="ins-period">
+        <button data-period="week" class="active">This week</button>
+        <button data-period="7d">7 days</button>
+        <button data-period="30d">30 days</button>
+        <button data-period="90d">90 days</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">What the data says</div>
+      <ul id="ins-highlights" class="highlights"></ul>
+    </div>
+
+    <div class="row" id="ins-scorecards"></div>
+
+    <div class="card">
+      <div class="card-title">Daily trend</div>
+      <div id="ins-daily"></div>
+    </div>
+
+    <div class="row">
+      <div class="card grow">
+        <div class="card-title">Week over week <span class="hint">same point in the week</span></div>
+        <div id="ins-wow"></div>
+      </div>
+      <div class="card grow">
+        <div class="card-title">Deep-work stretches <span class="hint">15m+ uninterrupted</span></div>
+        <div id="ins-streaks" class="scroll-list"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Weekly goals</div>
+      <div id="ins-goals"></div>
+      <div class="goal-form">
+        <select id="goal-key" class="input"></select>
+        <input type="number" id="goal-hours" class="input" min="0" max="168" step="0.5" placeholder="hours / week">
+        <button class="btn btn-primary" id="goal-save">Set goal</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FOCUS ================= -->
+  <section class="view" id="view-focus">
+    <div class="card focus-card">
+      <div id="focus-active-wrap">
+        <div class="card-title">No session running</div>
+        <div class="focus-setup">
+          <input type="text" id="focus-label" class="input" placeholder="What are you working on?">
+          <select id="focus-category" class="input"></select>
+          <div class="focus-modes">
+            <button class="btn btn-primary" id="focus-start-sw">Start stopwatch</button>
+            <span class="or">or</span>
+            <div class="timer-presets" id="timer-presets">
+              <button class="btn" data-min="15">15m</button>
+              <button class="btn" data-min="25">25m</button>
+              <button class="btn" data-min="45">45m</button>
+              <button class="btn" data-min="60">60m</button>
+              <button class="btn" data-min="90">90m</button>
+            </div>
+            <input type="number" id="focus-custom" class="input narrow" min="1" max="600" placeholder="min">
+            <button class="btn" id="focus-start-custom">Start timer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="segmented" id="focus-period">
+        <button data-period="today" class="active">Today</button>
+        <button data-period="week">This week</button>
+        <button data-period="30d">30 days</button>
+      </div>
+      <span class="muted" id="focus-total"></span>
+    </div>
+
+    <div class="row">
+      <div class="card grow">
+        <div class="card-title">By label</div>
+        <div id="focus-by-label"></div>
+      </div>
+      <div class="card grow">
+        <div class="card-title">By category</div>
+        <div id="focus-by-category"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Session log</div>
+      <div id="focus-history" class="scroll-list"></div>
+    </div>
+  </section>
+
+  <!-- ================= CHAT ================= -->
+  <section class="view" id="view-chat">
+    <div class="card chat-card">
+      <div class="chat-head">
+        <div class="card-title" style="margin:0">Ask about your data</div>
+        <div class="chat-controls">
+          <select id="chat-provider" class="input narrow-md">
+            <option value="ollama">Local (Ollama)</option>
+            <option value="gemini">Gemini</option>
+          </select>
+          <button class="btn btn-ghost" id="chat-clear">Clear</button>
+        </div>
+      </div>
+
+      <div id="chat-log" class="chat-log"></div>
+
+      <div class="chat-suggestions" id="chat-suggestions">
+        <button>How much did I actually learn this week?</button>
+        <button>What is my biggest time sink?</button>
+        <button>When do I focus best?</button>
+        <button>Am I doing better than last week?</button>
+      </div>
+
+      <form class="chat-input" id="chat-form">
+        <input type="text" id="chat-text" class="input" autocomplete="off"
+               placeholder="Ask anything about your activity…">
+        <button class="btn btn-primary" id="chat-send" type="submit">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section class="view" id="view-settings">
+    <div class="row">
+      <div class="card grow">
+        <div class="card-title">Assistant</div>
+        <div class="field">
+          <label>Default provider</label>
+          <select id="set-provider" class="input"></select>
+        </div>
+        <div id="set-provider-detail" class="muted small"></div>
+      </div>
+      <div class="card grow">
+        <div class="card-title">Database</div>
+        <div id="set-stats"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        Categorisation rules
+        <button class="btn btn-primary right" id="rules-reload">Reload rules &amp; re-categorise</button>
+      </div>
+      <div id="rules-error"></div>
+      <p class="muted small" id="rules-path"></p>
+      <div id="rules-uncat"></div>
+      <details class="rules-details">
+        <summary>All active rules</summary>
+        <div id="rules-list"></div>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
