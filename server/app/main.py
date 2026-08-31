@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import activity, admin, chat, focus, ingest, insights
+from app.api import activity, admin, chat, classify, focus, ingest, insights
 from app.core.config import settings
 from app.core.database import init_db
 from app.services.categorizer import ruleset
@@ -29,7 +29,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-for router in (ingest.router, activity.router, insights.router, focus.router, admin.router, chat.router):
+for router in (
+    ingest.router, activity.router, insights.router,
+    focus.router, admin.router, chat.router, classify.router,
+):
     app.include_router(router, prefix="/api")
 
 

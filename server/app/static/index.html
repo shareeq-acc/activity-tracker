@@ -246,6 +246,24 @@
 
     <div class="card">
       <div class="card-title">
+        Smart categorisation
+        <button class="btn btn-primary right" id="classify-run">Classify unresolved windows</button>
+      </div>
+      <p class="muted small">
+        Rules handle apps. They cannot handle browser tabs, where every YouTube video
+        shares one domain and only the title says whether it is a tutorial, a gaming
+        stream, or a sitcom. Those go to the local model once and are remembered.
+      </p>
+      <div id="classify-status"></div>
+      <div id="classify-pending"></div>
+      <details class="rules-details">
+        <summary>Remembered decisions</summary>
+        <div id="classify-list" class="scroll-list"></div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
         Categorisation rules
         <button class="btn btn-primary right" id="rules-reload">Reload rules &amp; re-categorise</button>
       </div>

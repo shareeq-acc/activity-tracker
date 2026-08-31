@@ -121,3 +121,28 @@ async def chat(
             body["contents"].append({"role": "user", "parts": responses})
 
     raise GeminiError("Gemini kept calling tools without answering; giving up.")
+
+
+async def chat_plain(prompt: str) -> str:
+    """One-shot completion with no tools, for the title classifier."""
+    if not available():
+        raise GeminiError("GEMINI_API_KEY is not set.")
+
+    async with httpx.AsyncClient(timeout=90) as client:
+        resp = await client.post(
+            f"{API_ROOT}/models/{settings.gemini_model}:generateContent",
+            json={
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.0, "maxOutputTokens": 2000},
+            },
+            headers={"x-goog-api-key": settings.gemini_api_key},
+        )
+
+    if resp.status_code >= 400:
+        raise GeminiError(_explain(resp.status_code, resp.text))
+
+    candidates = resp.json().get("candidates") or []
+    if not candidates:
+        raise GeminiError("Gemini returned no candidates.")
+    parts = candidates[0].get("content", {}).get("parts") or []
+    return "".join(p.get("text", "") for p in parts if not p.get("thought"))

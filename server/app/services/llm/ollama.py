@@ -59,7 +59,18 @@ async def chat(
                         "messages": messages,
                         "tools": T.to_openai_schema(),
                         "stream": False,
-                        "options": {"temperature": 0.2},
+                        "options": {
+                            "temperature": 0.2,
+                            # Ollama defaults to a 4096-token window. The tool
+                            # schemas, the system prompt, a full insights
+                            # payload and a few turns of history overrun that,
+                            # and an overrun is silently truncated from the
+                            # front - dropping the system prompt or the very
+                            # numbers being asked about, with no error. The
+                            # model would then answer confidently from
+                            # nothing. Cost is roughly half a gigabyte.
+                            "num_ctx": 8192,
+                        },
                     },
                 )
             except httpx.ConnectError as exc:
@@ -110,3 +121,28 @@ async def chat(
                 )
 
     raise OllamaError("The model kept calling tools without answering; giving up.")
+
+
+async def chat_plain(prompt: str, timeout_s: float = 600.0) -> str:
+    """One-shot completion with no tools, for the title classifier."""
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(connect=5.0, read=timeout_s, write=30.0, pool=5.0)
+    ) as client:
+        try:
+            resp = await client.post(
+                f"{base_url()}/api/chat",
+                json={
+                    "model": settings.ollama_model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "stream": False,
+                    "options": {"temperature": 0.0, "num_ctx": 8192},
+                },
+            )
+        except httpx.ConnectError as exc:
+            raise OllamaError(f"Cannot reach Ollama at {base_url()}.") from exc
+        except httpx.ReadTimeout as exc:
+            raise OllamaError("Ollama timed out while classifying.") from exc
+
+    if resp.status_code >= 400:
+        raise OllamaError(f"Ollama returned {resp.status_code}: {resp.text[:300]}")
+    return (resp.json().get("message") or {}).get("content", "")

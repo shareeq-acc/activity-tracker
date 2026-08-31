@@ -11,7 +11,7 @@ from app.core.database import get_session
 from app.models.activity import Segment
 from app.models.base import utcnow
 from app.schemas import IngestIn, IngestOut
-from app.services.categorizer import ruleset
+from app.services import classifier
 
 router = APIRouter(tags=["ingest"])
 
@@ -40,7 +40,8 @@ async def ingest(
     """
     _check_token(x_ingest_token)
 
-    rs = ruleset.get()
+    if not classifier.cache.loaded:
+        await classifier.cache.load(session)
     accepted = skipped = 0
     now = utcnow()
 
@@ -61,7 +62,7 @@ async def ingest(
             skipped += 1
             continue
 
-        category, bucket, rule_id = rs.categorize(seg.exe, seg.title)
+        category, bucket, rule_id = classifier.resolve(seg.exe, seg.title)
 
         stmt = sqlite_insert(Segment).values(
             uid=seg.uid,

@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import settings
 from app.models.base import Base
+# Imported for their side effect: every model must be registered on
+# Base.metadata before create_all runs, or its table is silently skipped.
+from app.models import activity, classification, focus, meta  # noqa: F401
 
 settings.data_dir.mkdir(parents=True, exist_ok=True)
 

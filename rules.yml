@@ -64,6 +64,7 @@ rules:
   # A YouTube tab that is clearly educational is caught by the NEXT rule, so
   # this one vetoes those keywords via title_not.
   - id: watching-web
+    ambiguous: true
     category: watching
     exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
     title_any:
@@ -86,6 +87,7 @@ rules:
       - "crash course"
       - "conference talk"
   - id: watching-as-learning
+    ambiguous: true
     category: learning
     exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]
     title_all: [youtube]
@@ -294,5 +296,6 @@ rules:
 
   # -- generic browser fallback: keep this LAST ------------------------------
   - id: browser-generic
+    ambiguous: true
     category: browsing
     exe: [chrome.exe, msedge.exe, firefox.exe, brave.exe, opera.exe, vivaldi.exe, zen.exe, arc.exe]

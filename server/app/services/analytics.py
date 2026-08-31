@@ -245,19 +245,29 @@ def totals_by_bucket(slices: list[Slice]) -> dict[str, float]:
 def top_apps(slices: list[Slice], limit: int = 12) -> list[dict]:
     rs = ruleset.get()
     acc: dict[str, float] = defaultdict(float)
-    cats: dict[str, str] = {}
+    # An app like a browser spans many categories. Labelling it with whichever
+    # category happened to appear first is arbitrary and actively misleading -
+    # it once reported Chrome as "Social media" off a single early tab. Use the
+    # category the app actually spent the most time in, and say how dominant
+    # that is so a split app can be recognised as split.
+    per_cat: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     for sl in slices:
         acc[sl.exe] += sl.seconds
-        cats.setdefault(sl.exe, sl.category)
+        per_cat[sl.exe][sl.category] += sl.seconds
+
     rows = sorted(acc.items(), key=lambda kv: -kv[1])[:limit]
     out = []
     for exe, secs in rows:
-        cat = rs.categories.get(cats.get(exe, ""))
+        breakdown = per_cat[exe]
+        top_cat, top_secs = max(breakdown.items(), key=lambda kv: kv[1])
+        cat = rs.categories.get(top_cat)
         out.append(
             {
                 "exe": exe,
                 "app": app_name(exe),
-                "category": cats.get(exe, "uncategorized"),
+                "category": top_cat,
+                "category_label": cat.label if cat else top_cat.title(),
+                "category_share": round(100 * top_secs / secs, 1) if secs else 0.0,
                 "color": cat.color if cat else "#64748b",
                 "seconds": round(secs),
             }

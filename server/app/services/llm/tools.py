@@ -190,19 +190,29 @@ async def execute(session: AsyncSession, name: str, args: dict) -> dict:
             slices = await an.load_slices(session, start, end)
             active = [s for s in slices if not s.is_idle]
             r = an.ratio(an.totals_by_bucket(slices))
+            # Key names spell out what each total contains. A small model given
+            # both "growth_time" and a Building row will otherwise mislabel one
+            # as the other, and the two differ by exactly the learning time.
             return {
                 "period": label,
-                "total_active": _hm(r["engaged_seconds"]),
-                "growth_time": _hm(r["growth_seconds"]),
-                "distraction_time": _hm(r["distraction_seconds"]),
-                "idle_time": _hm(r["idle_seconds"]),
-                "growth_percent": r["growth_pct"],
-                "categories": [
+                "total_active_time": _hm(r["engaged_seconds"]),
+                "growth_total_building_plus_learning": _hm(r["growth_seconds"]),
+                "distraction_total_social_plus_watching_plus_gaming": _hm(
+                    r["distraction_seconds"]
+                ),
+                "idle_time_away_from_pc": _hm(r["idle_seconds"]),
+                "growth_percent_of_active": r["growth_pct"],
+                "time_per_individual_category": [
                     {"category": c["label"], "time": _hm(c["seconds"]), "bucket": c["bucket"]}
                     for c in an.totals_by_category(active)
                 ],
                 "top_apps": [
-                    {"app": a["app"], "time": _hm(a["seconds"]), "category": a["category"]}
+                    {
+                        "app": a["app"],
+                        "time": _hm(a["seconds"]),
+                        "mostly_category": a["category_label"],
+                        "percent_of_its_time_in_that_category": a["category_share"],
+                    }
                     for a in an.top_apps(active, limit=10)
                 ],
             }
@@ -214,8 +224,10 @@ async def execute(session: AsyncSession, name: str, args: dict) -> dict:
             return {
                 "period": rep["period_label"],
                 "highlights": rep["highlights"],
-                "growth_time": _hm(rep["ratio"]["growth_seconds"]),
-                "distraction_time": _hm(rep["ratio"]["distraction_seconds"]),
+                "growth_total_building_plus_learning": _hm(rep["ratio"]["growth_seconds"]),
+                "distraction_total_social_plus_watching_plus_gaming": _hm(
+                    rep["ratio"]["distraction_seconds"]
+                ),
                 "growth_to_distraction_ratio": rep["ratio"]["ratio"],
                 "focus_score_out_of_100": rep["fragmentation"]["score"],
                 "app_switches_per_hour": rep["fragmentation"]["switches_per_hour"],

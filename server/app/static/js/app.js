@@ -663,8 +663,86 @@ const Settings = {
             <div class="s">${[...r.exe, ...r.title_any].slice(0, 12).map((x) => `<span class="rule-chip">${esc(x)}</span>`).join('')}</div>
           </div>
         </div>`).join('');
+
+      await loadCategories();
+      Classify.load();
     } catch (e) { toast(e.message, true); }
   },
+};
+
+/* ---------------- smart categorisation ---------------- */
+
+const Classify = {
+  async load() {
+    try {
+      const [pend, list] = await Promise.all([
+        api('/classify/pending?limit=40'),
+        api('/classify?limit=200'),
+      ]);
+
+      $('#classify-pending').innerHTML = pend.count
+        ? `<p class="muted small">${pend.count} window${pend.count === 1 ? '' : 's'} the rules could not resolve, biggest first:</p>`
+          + pend.pending.slice(0, 12).map((p) => `
+              <div class="list-item">
+                <div class="grow-1">
+                  <div class="t">${esc(p.title || '(no title)')}</div>
+                  <div class="s">${esc(p.app)}</div>
+                </div>
+                <div class="v">${esc(p.time)}</div>
+              </div>`).join('')
+        : '<div class="empty">Every recorded window has a category.</div>';
+
+      $('#classify-list').innerHTML = list.count
+        ? list.classifications.map((c) => `
+            <div class="list-item">
+              <span class="swatch" style="background:${c.color}"></span>
+              <div class="grow-1">
+                <div class="t">${esc(c.title || '(no title)')}</div>
+                <div class="s">${esc(c.app)} · ${esc(c.source)}${c.source === 'llm' ? ` · ${Math.round(c.confidence * 100)}%` : ''}</div>
+              </div>
+              <select class="input narrow-md" data-exe="${esc(c.exe)}" data-title="${esc(c.title)}">
+                ${State.categories.map((k) => `<option value="${k.key}"${k.key === c.category ? ' selected' : ''}>${esc(k.label)}</option>`).join('')}
+              </select>
+            </div>`).join('')
+        : '<div class="empty">Nothing decided yet.</div>';
+
+      $('#classify-list').querySelectorAll('select').forEach((sel) => {
+        sel.onchange = async () => {
+          try {
+            const r = await api('/classify/override', {
+              method: 'PUT',
+              body: { exe: sel.dataset.exe, title: sel.dataset.title, category: sel.value },
+            });
+            toast(`Pinned · ${r.segments_updated} segment(s) updated`);
+            Classify.load();
+          } catch (e) { toast(e.message, true); }
+        };
+      });
+    } catch (e) { toast(e.message, true); }
+  },
+};
+
+$('#classify-run').onclick = async (e) => {
+  const btn = e.target;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Classifying…';
+  $('#classify-status').innerHTML =
+    '<div class="banner warn">Asking the model. On a local CPU model this takes a few minutes per batch — you can leave this page.</div>';
+  try {
+    const d = await api('/classify/run?limit=20', { method: 'POST' });
+    $('#classify-status').innerHTML = d.classified
+      ? `<div class="banner">Classified ${d.classified} of ${d.pending} · ${d.segments_updated} segment(s) recategorised via ${esc(d.provider)}.</div>`
+      : `<div class="banner warn">Nothing was classified.${d.errors?.length ? ' ' + esc(d.errors[0]) : ''}</div>`;
+    await loadCategories();
+    Classify.load();
+    Today.load();
+  } catch (err) {
+    $('#classify-status').innerHTML = `<div class="banner error">${esc(err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 };
 
 $('#set-provider').onchange = async (e) => {

@@ -12,6 +12,7 @@ from app.models.activity import Segment
 from app.models.meta import Goal, Setting
 from app.schemas import GoalIn
 from app.services import analytics as an
+from app.services import classifier
 from app.services.categorizer import ruleset
 
 router = APIRouter(tags=["admin"])
@@ -70,30 +71,8 @@ async def reload_rules(session: AsyncSession = Depends(get_session)) -> dict:
     if ruleset.error:
         raise HTTPException(400, f"rules.yml failed to load: {ruleset.error}")
 
-    # Distinct (exe, title) pairs are far fewer than segments, so categorise
-    # each pair once and update in bulk.
-    pairs = (await session.execute(select(Segment.exe, Segment.title).distinct())).all()
-    updates: dict[tuple[str, str, str], list[tuple[str, str]]] = defaultdict(list)
-    for exe, title in pairs:
-        cat, bucket, rule_id = rs.categorize(exe, title or "")
-        updates[(cat, bucket, rule_id)].append((exe, title))
+    changed = await classifier.reapply(session)
 
-    changed = 0
-    for (cat, bucket, rule_id), members in updates.items():
-        # Chunked to stay well under SQLite's variable limit.
-        for i in range(0, len(members), 400):
-            chunk = members[i : i + 400]
-            result = await session.execute(
-                Segment.__table__.update()
-                .where(
-                    tuple_(Segment.exe, Segment.title).in_(chunk),
-                    (Segment.category != cat) | (Segment.rule_id != rule_id),
-                )
-                .values(category=cat, bucket=bucket, rule_id=rule_id)
-            )
-            changed += result.rowcount or 0
-
-    await session.commit()
     return {
         "reloaded": True,
         "categories": len(rs.categories),

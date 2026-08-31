@@ -20,6 +20,11 @@ class Rule:
     title_any: tuple[str, ...] = ()
     title_all: tuple[str, ...] = ()
     title_not: tuple[str, ...] = ()
+    # Marks a rule that is a guess rather than a fact. A browser window is the
+    # usual case: the process name says nothing, and the title may or may not
+    # give it away. Ambiguous matches are handed to the classifier for a
+    # second opinion instead of being trusted outright.
+    ambiguous: bool = False
 
     def matches(self, exe: str, title: str) -> bool:
         if self.exe and not any(fnmatch.fnmatchcase(exe, pat) for pat in self.exe):
@@ -49,14 +54,15 @@ class RuleSet:
     rules: list[Rule] = field(default_factory=list)
     fallback: str = "uncategorized"
 
-    def categorize(self, exe: str, title: str) -> tuple[str, str, str]:
-        """-> (category, bucket, rule_id). Matching is case-insensitive."""
+    def categorize(self, exe: str, title: str) -> tuple[str, str, str, bool]:
+        """-> (category, bucket, rule_id, ambiguous). Case-insensitive."""
         exe_l = (exe or "").lower()
         title_l = (title or "").lower()
         for rule in self.rules:
             if rule.matches(exe_l, title_l):
-                return rule.category, self.bucket_of(rule.category), rule.id
-        return self.fallback, self.bucket_of(self.fallback), ""
+                return rule.category, self.bucket_of(rule.category), rule.id, rule.ambiguous
+        # Nothing matched at all, which is the most uncertain outcome there is.
+        return self.fallback, self.bucket_of(self.fallback), "", True
 
     def bucket_of(self, category: str) -> str:
         cat = self.categories.get(category)
@@ -104,6 +110,7 @@ def load_ruleset(path: Path | None = None) -> RuleSet:
                 title_any=_as_tuple(item.get("title_any")),
                 title_all=_as_tuple(item.get("title_all")),
                 title_not=_as_tuple(item.get("title_not")),
+                ambiguous=bool(item.get("ambiguous", False)),
             )
         )
 
