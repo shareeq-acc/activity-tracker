@@ -6,7 +6,6 @@ collector/spool/
 collector/*.log
 
 # env
-.env
 
 # python
 __pycache__/
@@ -21,5 +20,6 @@ desktop.ini
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
-.vscode
 .gitignore
+config.bat
+node_modules
