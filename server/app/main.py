@@ -38,15 +38,12 @@ for router in (
 
 @app.middleware("http")
 async def no_store_api(request, call_next):
-    """Never let the browser cache an API response.
-
-    These are all live counters. Without this the browser will happily serve a
-    stale /api/summary from memory cache while /api/live comes back fresh, and
-    the dashboard shows two different totals for the same minute.
-    """
+    """Never let the browser cache an API response or static assets in development."""
     response = await call_next(request)
-    if request.url.path.startswith("/api/"):
-        response.headers["Cache-Control"] = "no-store, must-revalidate"
+    if request.url.path.startswith("/api/") or request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response
 
 

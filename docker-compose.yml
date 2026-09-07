@@ -16,6 +16,8 @@ services:
       - ./data:/data
       # Edit rules.yml on the host, hit "Reload rules" in the UI.
       - ./rules.yml:/app/rules.yml:ro
+      # Static assets (immediate live updates without requiring image rebuild)
+      - ./server/app/static:/app/app/static
     extra_hosts:
       # Lets the container reach an Ollama installed natively on the host.
       - "host.docker.internal:host-gateway"
