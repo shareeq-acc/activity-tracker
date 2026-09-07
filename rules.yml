@@ -21,16 +21,16 @@ version: 1
 # --- Buckets roll categories up into the learning-vs-distraction ratio -----
 #     bucket: growth | neutral | distraction | idle
 categories:
-  building:      { label: "Building",       bucket: growth,      color: "#34d399" }
-  learning:      { label: "Learning",       bucket: growth,      color: "#38bdf8" }
-  communication: { label: "Communication",  bucket: neutral,     color: "#a78bfa" }
-  browsing:      { label: "Browsing",       bucket: neutral,     color: "#94a3b8" }
-  utility:       { label: "Utility",        bucket: neutral,     color: "#64748b" }
-  social:        { label: "Social media",   bucket: distraction, color: "#fb7185" }
-  watching:      { label: "Watching",       bucket: distraction, color: "#f59e0b" }
-  gaming:        { label: "Gaming",         bucket: distraction, color: "#e879f9" }
-  idle:          { label: "Idle / away",    bucket: idle,        color: "#334155" }
-  uncategorized: { label: "Uncategorized",  bucket: neutral,     color: "#475569" }
+  building:      { label: "Building",       bucket: growth,      color: "#2E7D32" }
+  learning:      { label: "Learning",       bucket: growth,      color: "#0284C7" }
+  communication: { label: "Communication",  bucket: neutral,     color: "#7C3AED" }
+  browsing:      { label: "Browsing",       bucket: neutral,     color: "#64748B" }
+  utility:       { label: "Utility",        bucket: neutral,     color: "#475569" }
+  social:        { label: "Social media",   bucket: distraction, color: "#A71D31" }
+  watching:      { label: "Watching",       bucket: distraction, color: "#D97706" }
+  gaming:        { label: "Gaming",         bucket: distraction, color: "#BE185D" }
+  idle:          { label: "Idle / away",    bucket: idle,        color: "#9CA3AF" }
+  uncategorized: { label: "Uncategorized",  bucket: neutral,     color: "#6B7280" }
 
 fallback: uncategorized
 

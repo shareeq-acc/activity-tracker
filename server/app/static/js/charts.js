@@ -1,13 +1,13 @@
-/* Hand-rolled SVG charts. No dependencies, so the dashboard works offline
-   and there is nothing to keep patched. */
+/* Hand-rolled SVG charts for Warm Design System.
+   No external dependencies, offline-capable, WCAG AA contrast calibrated. */
 
 const Charts = (() => {
 
   const BUCKET_COLORS = {
-    growth: '#34d399',
-    distraction: '#fb7185',
-    neutral: '#94a3b8',
-    idle: '#334155',
+    growth: '#2E7D32',
+    distraction: '#A71D31',
+    neutral: '#75756F',
+    idle: '#B0AFA6',
   };
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -43,8 +43,8 @@ const Charts = (() => {
 
     if (!total) {
       return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#253059" stroke-width="18"/>
-        <text x="${c}" y="${c + 5}" text-anchor="middle" fill="#8d9bc4" font-size="13">no data</text>
+        <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#E3E2D8" stroke-width="16"/>
+        <text x="${c}" y="${c + 5}" text-anchor="middle" fill="#75756F" font-family="'Inter', sans-serif" font-size="13">no data</text>
       </svg>`;
     }
 
@@ -52,7 +52,7 @@ const Charts = (() => {
     const arcs = parts.filter((p) => p.value > 0).map((p) => {
       const len = (p.value / total) * circ;
       const el = `<circle cx="${c}" cy="${c}" r="${r}" fill="none"
-        stroke="${p.color}" stroke-width="18"
+        stroke="${p.color}" stroke-width="16"
         stroke-dasharray="${len} ${circ - len}"
         stroke-dashoffset="${-offset}"
         transform="rotate(-90 ${c} ${c})"><title>${esc(p.label)}: ${hm(p.value)}</title></circle>`;
@@ -61,18 +61,18 @@ const Charts = (() => {
     }).join('');
 
     return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#1a2344" stroke-width="18"/>
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#ECEBE0" stroke-width="16"/>
       ${arcs}
-      <text x="${c}" y="${c - 2}" text-anchor="middle" fill="#e6ebff" font-size="24" font-weight="650">${esc(centerTop)}</text>
-      <text x="${c}" y="${c + 18}" text-anchor="middle" fill="#8d9bc4" font-size="12">${esc(centerSub)}</text>
+      <text x="${c}" y="${c - 2}" text-anchor="middle" fill="#191918" font-family="'Inter', sans-serif" font-size="22" font-weight="500" letter-spacing="-0.03em">${esc(centerTop)}</text>
+      <text x="${c}" y="${c + 18}" text-anchor="middle" fill="#75756F" font-family="'Inter', sans-serif" font-size="11" font-weight="500" letter-spacing="0.04em">${esc(centerSub)}</text>
     </svg>`;
   }
 
   function legend(parts) {
     return parts.filter((p) => p.value > 0).map((p) => `
       <div><span class="swatch" style="background:${p.color}"></span>
-      <span>${esc(p.label)}</span>
-      <span class="muted" style="margin-left:auto">${hm(p.value)}</span></div>`).join('')
+      <span style="font-weight:400;color:#191918">${esc(p.label)}</span>
+      <span class="muted" style="margin-left:auto;font-variant-numeric:tabular-nums;font-size:13px">${hm(p.value)}</span></div>`).join('')
       || '<div class="muted">Nothing recorded yet.</div>';
   }
 
@@ -84,11 +84,11 @@ const Charts = (() => {
     return rows.map((r) => `
       <div class="bar-row">
         <div class="bar-label" title="${esc(r.title || r.label)}">
-          <span class="swatch" style="background:${r.color || '#64748b'}"></span>
+          <span class="swatch" style="background:${r.color || '#75756F'}"></span>
           <span>${esc(r.label)}</span>
         </div>
         <div class="bar-track"><div class="bar-fill"
-             style="width:${(r.value / max) * 100}%;background:${r.color || '#64748b'}"></div></div>
+             style="width:${(r.value / max) * 100}%;background:${r.color || '#75756F'}"></div></div>
         <div class="bar-value">${esc(r.display || hm(r.value))}</div>
       </div>`).join('');
   }
@@ -102,7 +102,7 @@ const Charts = (() => {
     const padL = 44, padB = 26, padT = 10;
     const plot = height - padB - padT;
     const max = Math.max(...days.map((d) => d.growth + d.neutral + d.distraction), 3600);
-    const bw = Math.min(26, (W - padL - 10) / days.length - 6);
+    const bw = Math.min(24, (W - padL - 10) / days.length - 6);
     const step = (W - padL - 10) / days.length;
 
     const cols = days.map((d, i) => {
@@ -120,20 +120,20 @@ const Charts = (() => {
         + seg(d.neutral, BUCKET_COLORS.neutral, 'neutral')
         + seg(d.growth, BUCKET_COLORS.growth, 'growth')
         + (days.length <= 32
-          ? `<text x="${x + bw / 2}" y="${height - 8}" text-anchor="middle" fill="#8d9bc4" font-size="10">${label}</text>`
+          ? `<text x="${x + bw / 2}" y="${height - 8}" text-anchor="middle" fill="#75756F" font-family="'Inter', sans-serif" font-size="10">${label}</text>`
           : '');
     }).join('');
 
     const ticks = [0, 0.5, 1].map((f) => {
       const y = padT + plot - f * plot;
-      return `<line x1="${padL}" y1="${y}" x2="${W - 6}" y2="${y}" stroke="#253059" stroke-width="1"/>
-              <text x="${padL - 8}" y="${y + 4}" text-anchor="end" fill="#8d9bc4" font-size="10">${hm(max * f)}</text>`;
+      return `<line x1="${padL}" y1="${y}" x2="${W - 6}" y2="${y}" stroke="#E3E2D8" stroke-width="1"/>
+              <text x="${padL - 8}" y="${y + 4}" text-anchor="end" fill="#75756F" font-family="'Inter', sans-serif" font-size="10">${hm(max * f)}</text>`;
     }).join('');
 
     return `<div style="overflow-x:auto">
       <svg width="${W}" height="${height}" viewBox="0 0 ${W} ${height}">${ticks}${cols}</svg>
     </div>
-    <div class="ring-legend" style="flex-direction:row;gap:16px;margin-top:10px">
+    <div class="ring-legend" style="flex-direction:row;gap:18px;margin-top:12px;font-size:12px">
       <div><span class="swatch" style="background:${BUCKET_COLORS.growth}"></span>Growth</div>
       <div><span class="swatch" style="background:${BUCKET_COLORS.neutral}"></span>Neutral</div>
       <div><span class="swatch" style="background:${BUCKET_COLORS.distraction}"></span>Distraction</div>
@@ -147,7 +147,7 @@ const Charts = (() => {
     const W = 720, padL = 40, padB = 22, padT = 8;
     const plot = height - padB - padT;
     const step = (W - padL - 10) / 24;
-    const bw = step - 5;
+    const bw = step - 4;
 
     const cols = hours.map((h, i) => {
       const x = padL + i * step;
@@ -160,7 +160,7 @@ const Charts = (() => {
           <title>${String(h.hour).padStart(2, '0')}:00 — ${name}: ${hm(v)}</title></rect>`;
       };
       const tick = h.hour % 3 === 0
-        ? `<text x="${x + bw / 2}" y="${height - 6}" text-anchor="middle" fill="#8d9bc4" font-size="10">${String(h.hour).padStart(2, '0')}</text>`
+        ? `<text x="${x + bw / 2}" y="${height - 6}" text-anchor="middle" fill="#75756F" font-family="'Inter', sans-serif" font-size="10">${String(h.hour).padStart(2, '0')}</text>`
         : '';
       return seg(h.distraction, BUCKET_COLORS.distraction, 'distraction')
         + seg(h.neutral, BUCKET_COLORS.neutral, 'neutral')
@@ -168,8 +168,8 @@ const Charts = (() => {
         + tick;
     }).join('');
 
-    const base = `<line x1="${padL}" y1="${padT + plot}" x2="${W - 6}" y2="${padT + plot}" stroke="#253059"/>
-      <text x="${padL - 8}" y="${padT + 10}" text-anchor="end" fill="#8d9bc4" font-size="10">${hm(max)}</text>`;
+    const base = `<line x1="${padL}" y1="${padT + plot}" x2="${W - 6}" y2="${padT + plot}" stroke="#E3E2D8"/>
+      <text x="${padL - 8}" y="${padT + 10}" text-anchor="end" fill="#75756F" font-family="'Inter', sans-serif" font-size="10">${hm(max)}</text>`;
 
     return `<div style="overflow-x:auto"><svg width="${W}" height="${height}" viewBox="0 0 ${W} ${height}">${base}${cols}</svg></div>`;
   }
@@ -183,13 +183,13 @@ const Charts = (() => {
       const x = (s.offset_s / DAY) * W;
       const w = Math.max(0.6, (s.seconds / DAY) * W);
       const title = `${s.app}${s.title ? ' — ' + s.title : ''}\n${new Date(s.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${hm(s.seconds)} · ${s.label}`;
-      return `<rect x="${x}" y="0" width="${w}" height="${height}" fill="${s.color}" opacity="${s.bucket === 'idle' ? .35 : .92}">
+      return `<rect x="${x}" y="0" width="${w}" height="${height}" fill="${s.color}" opacity="${s.bucket === 'idle' ? .4 : .95}">
         <title>${esc(title)}</title></rect>`;
     }).join('');
 
     const grid = Array.from({ length: 25 }, (_, h) => {
       const x = (h / 24) * W;
-      return `<line x1="${x}" y1="0" x2="${x}" y2="${height}" stroke="#0b1020" stroke-width="${h % 6 === 0 ? 1.5 : .6}" opacity=".55"/>`;
+      return `<line x1="${x}" y1="0" x2="${x}" y2="${height}" stroke="#E3E2D8" stroke-width="${h % 6 === 0 ? 1.5 : .8}" opacity=".8"/>`;
     }).join('');
 
     const labels = Array.from({ length: 9 }, (_, i) => {
@@ -199,7 +199,7 @@ const Charts = (() => {
 
     return `<div style="overflow-x:auto">
       <svg width="100%" height="${height}" viewBox="0 0 ${W} ${height}" preserveAspectRatio="none"
-           style="border-radius:8px;background:#0e1530;min-width:560px;display:block">
+           style="border-radius:2px;background:#ECEBE0;border:1px solid #E3E2D8;min-width:560px;display:block">
         ${blocks}${grid}
       </svg>
       <div class="strip-hours" style="min-width:560px">${labels}</div>
